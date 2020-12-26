@@ -9,12 +9,12 @@ const CategorySchema = new Schema({
 		minlength: [2, '{PATH} alanı en az {MINLENGTH} karakter olmalı'],
 	},
 	description: String,
-	products_id: [
+	products: [
 		{
 			type: mongoose.Types.ObjectId,
-			ref: Product,
-		},
-	],
+			ref:'Product'
+		}
+	]
 });
 
 module.exports = mongoose.model('category', CategorySchema);
