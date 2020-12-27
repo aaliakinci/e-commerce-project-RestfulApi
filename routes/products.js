@@ -3,8 +3,7 @@ const router = express.Router();
 //Models
 const Product = require('../Models/Product');
 const Category = require('../Models/Category');
-const { json } = require('express');
-const { Mongoose } = require('mongoose');
+
 //Get All Products
 router.get('/', (req, res) => {
 	const promise = Product.aggregate([
@@ -35,18 +34,17 @@ router.get('/', (req, res) => {
 //Create new Product
 router.post('/create', (req, res) => {
 	const product = new Product(req.body);
-	 const promise = product.save();
-	  
+	const promise = product.save();
+
 	promise
 		.then((data) => {
 			const category_id = req.body.category_id;
-			addProductThereCategory(category_id,data);
+			addProductThereCategory(category_id, data);
 			res.json(data);
 		})
 		.catch((err) => {
 			res.json(err);
 		});
-		
 });
 //Get Last Uploaded Product
 router.get('/lastProducts', (req, res) => {
@@ -119,17 +117,19 @@ router.delete('/:product_id', (req, res) => {
 		});
 });
 
-const addProductThereCategory=(category_id,product)=>{
-	const promise = Category.findOne({_id:category_id})
-  promise.then((data)=>{
+//Function Area
+
+const addProductThereCategory = (category_id, product) => {
+	const promise = Category.findOne({ _id: category_id });
+	promise
+		.then((data) => {
 			const productId = product._id;
 			data.products.push(productId.toString());
 			data.save();
-	}).catch((err)=>{
-		throw err;
-	});
+		})
+		.catch((err) => {
+			throw err;
+		});
 };
-
-
 
 module.exports = router;

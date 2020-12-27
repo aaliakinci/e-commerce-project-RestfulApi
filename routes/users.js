@@ -54,6 +54,7 @@ router.post('/register', (req, res) => {
 				res.json(err);
 			});
 	});
+
 });
 
 //Login
