@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const OrderDetailSchema = new Schema({
-	user_id: mongoose.Types.ObjectId,
 	buyerName: {
 		type: String,
 		required: true,
@@ -26,15 +25,7 @@ const OrderDetailSchema = new Schema({
 		unique: true,
 		required: true,
 	},
-	quantityProduct: Number,
 	order_id:mongoose.Types.ObjectId,
-	products_id: [
-		{
-			type: mongoose.Types.ObjectId,
-			ref: Product,
-		},
-	],
-	totalPrice: { type: Number },
 	shippingAdress: String,
 });
 

@@ -70,7 +70,7 @@ router.get('/purchaseQuantity', (req, res) => {
 });
 
 // Get Product By CategoryId
-router.get('/category_id', (req, res) => {
+router.get('/:category_id', (req, res) => {
 	const promise = Product.find({ category_id: req.params.category_id });
 	promise
 		.then((data) => {
