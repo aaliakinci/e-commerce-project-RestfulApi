@@ -23,7 +23,7 @@ const OrderSchema = new Schema({
 		type:Boolean,
 		default:false,
 	},
-	orderDetail_id:mongoose.Types.ObjectId,
+	orderDetail_id:{type:mongoose.Types.ObjectId,ref:'OrderDetail'},
 	totalPrice: { type: Number },
 });
 

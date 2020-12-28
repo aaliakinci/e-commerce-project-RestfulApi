@@ -26,7 +26,10 @@ mongoose.connection.on('open', () => {
 mongoose.connection.on('error', (err) => {
 	console.log('MongoDB Not Connected' + err);
 });
+ 
 mongoose.Promise = global.Promise;
+
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
