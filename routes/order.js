@@ -6,7 +6,7 @@ const router = express.Router();
 const Order = require('../Models/Order');
 const OrderDetail = require('../Models/OrderDetail');
 const User = mongoose.model('user');
-
+const Product = require('../Models/Product');
 //Get All Order
 router.get('/', (req, res) => {
 	const promise = Order.find({});
@@ -63,7 +63,7 @@ router.get('/:order_id', (req, res) => {
 		});
 });
 
-//Create order with order detail
+//Create order with order detail and if has user push user
 router.post('/create', async (req, res) => {
 	try {
 		const { user_id, quantityProduct, products, totalPrice } = req.body;
@@ -81,8 +81,7 @@ router.post('/create', async (req, res) => {
 			totalPrice,
 		});
 		const { _id } = await order.save();
-		debugger;
-		const lastData = createOrderDetail(
+		createOrderDetail(
 			customerName,
 			customerSurname,
 			customerPhone,
@@ -93,13 +92,19 @@ router.post('/create', async (req, res) => {
 		if (user_id != null) {
 			pushUserOrder(user_id, _id);
 		}
-		res.json(lastData);
+		productUpdatepurchaseQuantity(_id.toString());
+		productUpdateunitStock(_id.toString());
+		res.json(order);
 	} catch (error) {
 		throw error;
 	}
 });
 
 //Function Area
+
+
+// for Create Method ----------------------------------------------------!
+
 function createOrderDetail(
 	customerName,
 	customerSurname,
@@ -152,5 +157,56 @@ function pushUserOrder(user_id, order_id) {
 			throw err;
 		});
 }
+
+async function productUpdatepurchaseQuantity(order_id) {
+	const { products } = await Order.findById(order_id);
+	const prdQuantity = [];
+	for (i in products) {
+		const addedItem = prdQuantity.find((x) => x._id == products[i].toString());
+		if (addedItem) {
+			addedItem.quantity += 1;
+		} else {
+			prdQuantity.push({ _id: products[i].toString(), quantity: 1 });
+		}
+	}
+	for (let j = 0; j < prdQuantity.length; j++) {
+		const promise = Product.findById(prdQuantity[j]._id.toString());
+		promise
+			.then((data) => {
+				return Product.findByIdAndUpdate(data._id.toString(), {
+					purchaseQuantity: data.purchaseQuantity + 1 * prdQuantity[j].quantity,
+				});
+			})
+			.catch((err) => {
+				console.log(err);
+			});
+	}
+}
+
+async function productUpdateunitStock(order_id) {
+	const { products } = await Order.findById(order_id);
+	const prdQuantity = [];
+	for (i in products) {
+		const addedItem = prdQuantity.find((x) => x._id == products[i].toString());
+		if (addedItem) {
+			addedItem.quantity += 1;
+		} else {
+			prdQuantity.push({ _id: products[i].toString(), quantity: 1 });
+		}
+	}
+	for (let j = 0; j < prdQuantity.length; j++) {
+		const promise = Product.findById(prdQuantity[j]._id.toString());
+		promise
+			.then((data) => {
+				return Product.findByIdAndUpdate(data._id.toString(), {
+					unitStock: data.unitStock - 1 * prdQuantity[j].quantity,
+				});
+			})
+			.catch((err) => {
+				console.log(err);
+			});
+	}
+}
+// for Create Method END ----------------------------------------------------!
 
 module.exports = router;

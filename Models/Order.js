@@ -5,25 +5,31 @@ const Schema = mongoose.Schema;
 
 const OrderSchema = new Schema({
 	user_id: mongoose.Types.ObjectId,
-	quantityProduct: Number,
+	totalProduct: Number,
 	products: [
 		{
 			type: mongoose.Types.ObjectId,
-			ref: 'Product',
-		},
-		{
-			productQuantity:Number
+			ref: 'Product',		
 		}
 	],
 	delivered: {
 		type: Boolean,
 		default: false,
 	},
+	deliveredDate:{
+		type:Date
+	},
+	inCargoDate:{
+		type:Date
+	},
 	inCargo:{
 		type:Boolean,
 		default:false,
 	},
 	orderDetail_id:{type:mongoose.Types.ObjectId,ref:'OrderDetail'},
+	createAt:{
+		type:Date,
+		default:Date.now},
 	totalPrice: { type: Number },
 });
 

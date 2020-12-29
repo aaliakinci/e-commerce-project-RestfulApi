@@ -34,6 +34,7 @@ const OrderDetailSchema = new Schema({
 		ref: 'Order',
 	},
 	shippingAdress: { type: String, unique: false },
+	
 });
 
 module.exports = mongoose.model('orderdetail', OrderDetailSchema);

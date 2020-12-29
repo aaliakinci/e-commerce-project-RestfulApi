@@ -32,6 +32,9 @@ const PaymentSchema = new Schema({
 		minlength: [2, '{PATH} alanı en az {MINLENGTH} karakter olmalı'],
 	},
 	totalPrice: { type: Number },
+	createAt:{
+		type:Date,
+		default:Date.now}
 });
 
 module.exports = mongoose.model('payment', PaymentSchema);
