@@ -23,5 +23,11 @@ const ProductSchema = new Schema({
 		type: Date,
 		default: Date.now,
 	},
+	comments:[
+		{
+			type:mongoose.Types.ObjectId,
+			ref:'Comment'
+		}
+	]
 });
 module.exports = mongoose.model('product', ProductSchema);

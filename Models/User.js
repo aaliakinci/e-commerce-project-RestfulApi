@@ -39,7 +39,13 @@ const UserSchema = new Schema({
 	],
 	createAt:{
 		type:Date,
-		default:Date.now}
+		default:Date.now},
+	comments:[
+		{
+			type:mongoose.Types.ObjectId,
+			ref:'Comment'
+		}
+	]
 });
 
 module.exports = mongoose.model('user', UserSchema);

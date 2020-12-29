@@ -41,7 +41,7 @@ router.get('/:order_id', (req, res) => {
 		});
 });
 //Update Order by order_id
-router.get('/:order_id', (req, res) => {
+router.put('/:order_id', (req, res) => {
 	const promise = Order.findByIdAndUpdate(req.params.order_id, req.body, { new: true });
 	promise
 		.then((data) => {
@@ -51,18 +51,6 @@ router.get('/:order_id', (req, res) => {
 			res.json(data);
 		});
 });
-//Delete Order by order_id
-router.get('/:order_id', (req, res) => {
-	const promise = Order.findByIdAndRemove(req.params.order_id);
-	promise
-		.then((data) => {
-			res.json(data);
-		})
-		.catch((err) => {
-			res.json(data);
-		});
-});
-
 //Create order with order detail and if has user push user
 router.post('/create', async (req, res) => {
 	try {
@@ -101,8 +89,6 @@ router.post('/create', async (req, res) => {
 });
 
 //Function Area
-
-
 // for Create Method ----------------------------------------------------!
 
 function createOrderDetail(
