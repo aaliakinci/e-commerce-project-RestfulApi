@@ -34,18 +34,19 @@ const UserSchema = new Schema({
 	orders: [
 		{
 			type: mongoose.Types.ObjectId,
-			ref:'Order'
+			ref: 'Order',
 		},
 	],
-	createAt:{
-		type:Date,
-		default:Date.now},
-	comments:[
+	createAt: {
+		type: Date,
+		default: Date.now,
+	},
+	comments: [
 		{
-			type:mongoose.Types.ObjectId,
-			ref:'Comment'
-		}
-	]
+			type: mongoose.Types.ObjectId,
+			ref: 'Comment',
+		},
+	],
 });
 
 module.exports = mongoose.model('user', UserSchema);

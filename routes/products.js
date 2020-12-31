@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 //Models
 const Product = require('../Models/Product');
 const Category = require('../Models/Category');
-
+const Comment = require('../Models/Comment');
+const User = mongoose.model('user');
 //Get All Products
 router.get('/', (req, res) => {
 	const promise = Product.aggregate([
@@ -106,19 +108,65 @@ router.put('/:product_id', (req, res) => {
 });
 
 //Remove Product By Id
-router.delete('/:product_id', (req, res) => {
-	const promise = Product.findByIdAndRemove(req.params.product_id);
-	promise
-		.then((data) => {
-			res.json(data);
-		})
-		.catch((err) => {
-			res.json(err);
-		});
+router.delete('/:product_id', async (req, res) => {
+	try {
+		let comment_id_arr = [];
+		await deleteProductFromCategory(req.params.product_id);
+		comment_id_arr = await deleteProductFromComments(req.params.product_id);
+
+		for (let i in comment_id_arr) {
+			await deleteProductCommentsFromUser(comment_id_arr[i]);
+		}
+		await Product.findByIdAndRemove(req.params.product_id);
+		res.json({ status: 1 });
+	} catch (error) {
+		console.log(error);
+	}
 });
 
 //Function Area
 
+//Remove Product From Category
+
+async function deleteProductFromCategory(product_id) {
+	const { category_id } = await Product.findById(product_id);
+	return Category.findByIdAndUpdate(category_id, { $pull: { products: product_id } });
+}
+async function deleteProductFromComments(product_id) {
+	const comments = await Comment.find({});
+	forUsers = [];
+	for (let i in comments) {
+		if (comments[i].product_id == product_id) {
+			forUsers.push(comments[i]._id);
+			const promise = Comment.findByIdAndRemove(comments[i]._id);
+			promise
+				.then((data) => {
+					data.save();
+				})
+				.catch((err) => {
+					console.log(err);
+				});
+		}
+	}
+	return forUsers;
+}
+async function deleteProductCommentsFromUser(comment_id) {
+	const users = await User.find({});
+	for (let i in users) {
+		const promise = User.findByIdAndUpdate(users[i]._id.toString(), {
+			$pull: { comments: comment_id },
+		});
+		promise
+			.then((data) => {
+				data.save();
+			})
+			.catch((err) => {
+				console.log(err);
+			});
+	}
+}
+
+//addProduct Category
 const addProductThereCategory = (category_id, product) => {
 	const promise = Category.findOne({ _id: category_id });
 	promise

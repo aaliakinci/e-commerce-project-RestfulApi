@@ -12,7 +12,7 @@ const categoryRouter = require('./routes/category');
 const paymentRouter = require('./routes/payment');
 const orderRouter = require('./routes/order');
 const orderDetailRouter= require('./routes/orderDetail');
-const commentRouter= require('./routes/comment');
+const commentRouter= require('./routes/comments');
 const app = express();
 
 //db connection
