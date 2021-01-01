@@ -41,15 +41,19 @@ router.get('/:order_id', (req, res) => {
 		});
 });
 //Update Order by order_id
-router.put('/:order_id', (req, res) => {
-	const promise = Order.findByIdAndUpdate(req.params.order_id, req.body, { new: true });
-	promise
-		.then((data) => {
-			res.json(data);
-		})
-		.catch((err) => {
-			res.json(data);
-		});
+router.put('/:order_id', async (req, res) => {
+	try {
+		const { canselOrder } = req.body;
+	if (canselOrder == 'true') {
+		await productUpdatepurchaseQuantity(req.params.order_id, false);
+		await productUpdateunitStock(req.params.order_id, false);
+	} else {
+		const {data:order}=await Order.findByIdAndUpdate(req.params.order_id, req.body, { new: true });
+		res.json(order);
+	}
+	} catch (error) {
+		res.json(error);
+	}
 });
 //Create order with order detail and if has user push user
 router.post('/create', async (req, res) => {
@@ -80,8 +84,8 @@ router.post('/create', async (req, res) => {
 		if (user_id != null) {
 			pushUserOrder(user_id, _id);
 		}
-		productUpdatepurchaseQuantity(_id.toString());
-		productUpdateunitStock(_id.toString());
+		productUpdatepurchaseQuantity(_id.toString(), true);
+		productUpdateunitStock(_id.toString(), true);
 		res.json(order);
 	} catch (error) {
 		throw error;
@@ -89,6 +93,11 @@ router.post('/create', async (req, res) => {
 });
 
 //Function Area
+
+// for update if canseled -------------------
+
+// for update if canseled end -----------------
+
 // for Create Method ----------------------------------------------------!
 
 function createOrderDetail(
@@ -144,55 +153,110 @@ function pushUserOrder(user_id, order_id) {
 		});
 }
 
-async function productUpdatepurchaseQuantity(order_id) {
-	const { products } = await Order.findById(order_id);
-	const prdQuantity = [];
-	for (i in products) {
-		const addedItem = prdQuantity.find((x) => x._id == products[i].toString());
-		if (addedItem) {
-			addedItem.quantity += 1;
-		} else {
-			prdQuantity.push({ _id: products[i].toString(), quantity: 1 });
+async function productUpdatepurchaseQuantity(order_id, which) {
+	if (which) {
+		const { products } = await Order.findById(order_id);
+		const prdQuantity = [];
+		for (i in products) {
+			const addedItem = prdQuantity.find((x) => x._id == products[i].toString());
+			if (addedItem) {
+				addedItem.quantity += 1;
+			} else {
+				prdQuantity.push({ _id: products[i].toString(), quantity: 1 });
+			}
 		}
-	}
-	for (let j = 0; j < prdQuantity.length; j++) {
-		const promise = Product.findById(prdQuantity[j]._id.toString());
-		promise
-			.then((data) => {
-				return Product.findByIdAndUpdate(data._id.toString(), {
-					purchaseQuantity: data.purchaseQuantity + 1 * prdQuantity[j].quantity,
+		for (let j = 0; j < prdQuantity.length; j++) {
+			const promise = Product.findById(prdQuantity[j]._id.toString());
+			promise
+				.then((data) => {
+					return Product.findByIdAndUpdate(data._id.toString(), {
+						purchaseQuantity: data.purchaseQuantity + 1 * prdQuantity[j].quantity,
+					});
+				})
+				.catch((err) => {
+					console.log(err);
 				});
-			})
-			.catch((err) => {
-				console.log(err);
-			});
+		}
+		
+	} else {
+		const { products } = await Order.findById(order_id);
+		const prdQuantity = [];
+		for (i in products) {
+			const addedItem = prdQuantity.find((x) => x._id == products[i].toString());
+			if (addedItem) {
+				addedItem.quantity += 1;
+			} else {
+				prdQuantity.push({ _id: products[i].toString(), quantity: 1 });
+			}
+		}
+		for (let j = 0; j < prdQuantity.length; j++) {
+			const promise = Product.findById(prdQuantity[j]._id.toString());
+			promise
+				.then((data) => {
+					return Product.findByIdAndUpdate(data._id.toString(), {
+						purchaseQuantity: data.purchaseQuantity - 1 * prdQuantity[j].quantity,
+						canceledQuantity: data.canceledQuantity + 1 * prdQuantity[j].quantity
+					});
+				})
+				.catch((err) => {
+					console.log(err);
+				});
 	}
 }
+}
 
-async function productUpdateunitStock(order_id) {
-	const { products } = await Order.findById(order_id);
-	const prdQuantity = [];
-	for (i in products) {
-		const addedItem = prdQuantity.find((x) => x._id == products[i].toString());
-		if (addedItem) {
-			addedItem.quantity += 1;
-		} else {
-			prdQuantity.push({ _id: products[i].toString(), quantity: 1 });
+async function productUpdateunitStock(order_id, which) {
+	if(which) 
+	{
+		const { products } = await Order.findById(order_id);
+		const prdQuantity = [];
+		for (i in products) {
+			const addedItem = prdQuantity.find((x) => x._id == products[i].toString());
+			if (addedItem) {
+				addedItem.quantity += 1;
+			} else {
+				prdQuantity.push({ _id: products[i].toString(), quantity: 1 });
+			}
+		}
+		for (let j = 0; j < prdQuantity.length; j++) {
+			const promise = Product.findById(prdQuantity[j]._id.toString());
+			promise
+				.then((data) => {
+					return Product.findByIdAndUpdate(data._id.toString(), {
+						unitStock: data.unitStock - 1 * prdQuantity[j].quantity,
+					});
+				})
+				.catch((err) => {
+					console.log(err);
+				});
 		}
 	}
-	for (let j = 0; j < prdQuantity.length; j++) {
-		const promise = Product.findById(prdQuantity[j]._id.toString());
-		promise
-			.then((data) => {
-				return Product.findByIdAndUpdate(data._id.toString(), {
-					unitStock: data.unitStock - 1 * prdQuantity[j].quantity,
+	else
+	{
+		const { products } = await Order.findById(order_id);
+		const prdQuantity = [];
+		for (i in products) {
+			const addedItem = prdQuantity.find((x) => x._id == products[i].toString());
+			if (addedItem) {
+				addedItem.quantity += 1;
+			} else {
+				prdQuantity.push({ _id: products[i].toString(), quantity: 1 });
+			}
+		}
+		for (let j = 0; j < prdQuantity.length; j++) {
+			const promise = Product.findById(prdQuantity[j]._id.toString());
+			promise
+				.then((data) => {
+					return Product.findByIdAndUpdate(data._id.toString(), {
+						unitStock: data.unitStock + 1 * prdQuantity[j].quantity,
+					});
+				})
+				.catch((err) => {
+					console.log(err);
 				});
-			})
-			.catch((err) => {
-				console.log(err);
-			});
+		}
 	}
 }
 // for Create Method END ----------------------------------------------------!
 
-module.exports = router;
+module.exports = router ;

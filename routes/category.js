@@ -1,8 +1,12 @@
+const { json } = require('express');
 const express = require('express');
 const router = express.Router();
 
 //Models
 const Category = require('../Models/Category');
+const Product = require('../Models/Product');
+const Comment = require('../Models/Comment');
+
 
 //Get All Category
 router.get('/', (req, res) => {
@@ -78,17 +82,64 @@ router.put('/:category_id', (req, res) => {
 			res.json(err);
 		});
 });
-
 //Delete Category by Id
-router.delete('/:category_id', (req, res) => {
-	const promise = Category.findByIdAndRemove(req.params.category_id);
-	promise
-		.then((data) => {
-			res.json(data);
-		})
-		.catch((err) => {
-			res.json(err);
-		});
+router.delete('/:category_id', async (req, res) => {
+	try {
+		const { products } = await Category.findById(req.params.category_id);
+		for (let i in products) {
+			await deleteProducts(products[i].toString());
+		}
+		await Category.findByIdAndRemove(req.params.category_id);
+		res.json({ status: 1 });
+	} catch (error) {
+		res.json(error);
+	}
 });
+
+async function deleteProducts(product_id) {
+	try {
+		let comment_id_arr = [];
+		comment_id_arr = await deleteProductFromComments(product_id);
+		for (let i in comment_id_arr) {
+			await deleteProductCommentsFromUser(comment_id_arr[i]);
+		}
+		await Product.findByIdAndRemove(product_id);
+	} catch (error) {
+		console.log(error);
+	}
+}
+async function deleteProductFromComments(product_id) {
+	const comments = await Comment.find({});
+	forUsers = [];
+	for (let i in comments) {
+		if (comments[i].product_id == product_id) {
+			forUsers.push(comments[i]._id);
+			const promise = Comment.findByIdAndRemove(comments[i]._id);
+			promise
+				.then((data) => {
+					data.save();
+				})
+				.catch((err) => {
+					console.log(err);
+				});
+		}
+	}
+	return forUsers;
+}
+async function deleteProductCommentsFromUser(comment_id) {
+	const users = await User.find({});
+	for (let i in users) {
+		const promise = User.findByIdAndUpdate(users[i]._id.toString(), {
+			$pull: { comments: comment_id },
+		});
+		promise
+			.then((data) => {
+				data.save();
+			})
+			.catch((err) => {
+				console.log(err);
+			});
+	}
+}
 
 module.exports = router;

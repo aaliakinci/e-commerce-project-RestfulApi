@@ -23,6 +23,10 @@ const ProductSchema = new Schema({
 		type: Date,
 		default: Date.now,
 	},
+	canceledQuantity :{
+		type:Number,
+		default:0
+	},
 	comments:[
 		{
 			type:mongoose.Types.ObjectId,

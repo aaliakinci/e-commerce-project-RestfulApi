@@ -3,7 +3,7 @@ const router = express.Router();
 
 //Models
 const Payment = require('../Models/Payment');
-
+//Get All Payment
 router.get('/', (req, res) => {
 	const promise = Payment.find({});
 	promise
@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
 			res.json(err);
 		});
 });
-
+//Create Payment
 router.post('/create', (req, res) => {
 	const payment = new Payment(req.body);
 	const promise = payment.save();
@@ -27,6 +27,7 @@ router.post('/create', (req, res) => {
 		});
 });
 
+//Get payment by payment_id
 router.get('/:payment_id', (req, res) => {
 	const promise = Payment.findById(req.params.payment_id);
 	promise
