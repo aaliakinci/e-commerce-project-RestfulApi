@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const createError=require('http-errors');
 //password hash
 const bcrypt = require('bcryptjs');
 //mongoose
@@ -74,6 +74,26 @@ router.get('/:user_id/comments', (req, res) => {
 		.catch((err) => {
 			res.json(err);
 		});
+});
+
+//Login
+router.post('/login', async (req, res, next) => {
+ 
+	try {
+		const { emailAdress, password } = req.body;
+	 
+		const user = await User.findOne({ emailAdress });
+		if (!user) {
+		 throw createError(400,"Girilen email/şifre hatalı");
+		}
+		const checkPassword = bcrypt.compare(password, user.password);
+		if (!checkPassword) {
+		  throw createError(400,"Girilen email/şifre hatalı");
+		}
+		res.json(user);
+	} catch (error) {
+		next(error);
+	}
 });
 
 //Register
