@@ -1,10 +1,12 @@
+const User = require("../models/User");
+
 const adminAuthentication = async (req,res,next)=>{
 	try {
 		const user = req.user;
-		if(user.isAdmin==false)
+		if(user.isAdmin=false)
 		{
-			return res.status(403).json({
-				mesaj:'Erişim engellendi'
+			throw res.status(403).json({
+				message:'Erişim engellendi'
 			});
 		}
 			next();

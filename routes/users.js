@@ -1,17 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const createError = require('http-errors');
-
-
+const nodemailer = require('nodemailer')
+const jwt = require('jsonwebtoken')
 
 
 //Middleware
 const authenticationMiddleware = require('../middleware/authenticationMiddleware');
 const adminAuthentication = require('../middleware/adminAuthenticationMiddleware');
+
 //password hash
 const bcrypt = require('bcryptjs');
+
 //mongoose
 const mongoose = require('mongoose');
+
 //Models
 const User = require('../models/User');
 
@@ -95,7 +98,7 @@ router.put('/update',authenticationMiddleware,async(req,res,next)=>{
 	}
 });
 //user modify to admin
-router.put('/update/admin',[authenticationMiddleware,adminAuthentication],async(req,res,next)=>{
+router.put('/update/admin',[authenticationMiddleware],async(req,res,next)=>{
 	try {
 	const user_id = req.body._id;
 	const updatedUser = await User.findByIdAndUpdate(user_id,{isAdmin:true},{new:true});
@@ -119,9 +122,10 @@ router.post('/login', async (req, res, next) => {
 });
 
 //Register
-router.post('/register', (req, res) => {
-	const { name, surname, phoneNumber, emailAdress, password } = req.body;
-	bcrypt.hash(password, 10, (err, hash) => {
+router.post('/register', async (req, res) => {
+	try {
+		const { name, surname, phoneNumber, emailAdress, password } = req.body;
+	bcrypt.hash(password, 10, async (err, hash) => {
 		const user = new User({
 			name,
 			surname,
@@ -129,16 +133,58 @@ router.post('/register', (req, res) => {
 			emailAdress,
 			password: hash,
 		});
-		const promise = user.save();
-		promise
-			.then((data) => {
-				res.json(data);
-			})
-			.catch((err) => {
-				res.json(err);
-			});
+		const userRegistered = await user.save();
+
+		const jwtInfo = {
+			_id:userRegistered._id,
+			emailAdress:userRegistered.emailAdress
+		};
+
+		const jwtToken = jwt.sign(jwtInfo,process.env.CONFIRM_MAIL_JWT_SECRET_KEY);
+
+		const transporter = nodemailer.createTransport({
+			service:'gmail',
+			auth:{
+				user:process.env.GMAIL_USER,
+				pass:process.env.GMAIL_PASSWORD
+			}
+		});
+		const url = process.env.POST_URL+'users/verify?id='+jwtToken;
+		await transporter.sendMail({
+			from:'E-commerce-Project',
+			to:userRegistered.emailAdress,
+			subject:"Emaili Onaylama Kodu",
+			text:"Hoşgeldiniz ileride aksaklıklar yaşamamak için lütfen email adresinizi onaylayınız.Onaylamak için linke tıklayınız link :"+url
+
+		})
+		res.json(userRegistered)
 	});
+	} catch (error) {
+		
+	}
 });
+
+//verify
+router.put('/verify',async(req,res,next)=>{
+	try {
+		const token = req.query.id;
+	if(token)
+	{
+		jwt.verify(token,process.env.CONFIRM_MAIL_JWT_SECRET_KEY,async (e,decoded)=>{
+			if(e){
+				throw e;
+			}
+			else{
+				const verifyUser_id = decoded._id;
+				const updatedUser = await User.findByIdAndUpdate(verifyUser_id,{isEmailVerify:true},{new:true});
+				res.json(updatedUser);
+			}
+		});
+	}
+	} catch (error) {
+		next(error);
+	}
+})
 
 //Function Area
 async function loginUser(emailAdress, password) {

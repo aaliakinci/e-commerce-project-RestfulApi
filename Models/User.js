@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const jwt = require('jsonwebtoken');
+require('dotenv').config()
+
 const UserSchema = new Schema({
 	name: {
 		type: String,
@@ -50,11 +52,15 @@ const UserSchema = new Schema({
 	isAdmin:{
 		type:Boolean,
 		default:false
+	},
+	isEmailVerify:{
+		type:Boolean,
+		default:false
 	}
 });
 UserSchema.methods.generateToken= async function(){
 	const loginUser = this;
-	const token = await jwt.sign({_id:loginUser._id,emailAdress:loginUser.emailAdress},'secretkey',{expiresIn:'2d'});
+	const token = await jwt.sign({_id:loginUser._id,emailAdress:loginUser.emailAdress,isEmailVerify:loginUser.isEmailVerify},process.env.JWT_SECRET_KEY,{expiresIn:'2d'});
 	return token;
 }
 

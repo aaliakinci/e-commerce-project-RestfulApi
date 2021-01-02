@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
- 
+ require('dotenv').config()
 
-mongoose.connect('mongodb://localhost:27017/e-commerce-project', {
+mongoose.connect(process.env.DB_CONNECT, {
 	useNewUrlParser: true,
-	useUnifiedTopology: true,
+	useUnifiedTopology: true,	
 });
 mongoose.connection.on('open', () => {
 	console.log('MongoDB Connected');

@@ -14,7 +14,7 @@ const orderDetailRouter= require('./routes/orderDetail');
 const commentRouter= require('./routes/comments');
 const errorMiddleware=require('./middleware/errorCatchMiddleware')
 const app = express();
-
+require('dotenv').config()
 //db connection
 require('./db/db');
 
@@ -51,7 +51,7 @@ app.use(function (err, req, res, next) {
 
 	// render the error page
 	res.status(err.status || 500);
-	res.render('error');
+	res.json({error:err});
 });
 
 module.exports = app;
