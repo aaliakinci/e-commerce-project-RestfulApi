@@ -6,7 +6,11 @@ const Comment = require('../Models/Comment');
 const User = mongoose.model('user');
 const Product = require('../Models/Product');
 
-router.get('/', (req, res,next) => {
+//Middleware
+const authenticationMiddleware = require('../middleware/authenticationMiddleware');
+const adminAuthentication = require('../middleware/adminAuthenticationMiddleware');
+
+router.get('/', [authenticationMiddleware, adminAuthentication], (req, res, next) => {
 	const promise = Comment.find({});
 	promise
 		.then((data) => {
@@ -17,7 +21,7 @@ router.get('/', (req, res,next) => {
 		});
 });
 //Get Comment by User_id
-router.get('/:user_id', (req, res,next) => {
+router.get('/:user_id', authenticationMiddleware, (req, res, next) => {
 	const promise = Comment.find({ user_id: req.params.user_id });
 	promise
 		.then((data) => {
@@ -28,7 +32,7 @@ router.get('/:user_id', (req, res,next) => {
 		});
 });
 //Get Comment by Product_id
-router.get('/:product_id', (req, res,next) => {
+router.get('/:product_id', (req, res, next) => {
 	const promise = Comment.find({ product_id: req.params.product_id });
 	promise
 		.then((data) => {
@@ -39,7 +43,7 @@ router.get('/:product_id', (req, res,next) => {
 		});
 });
 //Create Comment and push Product and User Comments
-router.post('/create', async (req, res,next) => {
+router.post('/create', authenticationMiddleware, async (req, res, next) => {
 	try {
 		const { user_id, product_id, title, body } = req.body;
 		const comment = new Comment({ user_id, product_id, title, body });
@@ -51,13 +55,18 @@ router.post('/create', async (req, res,next) => {
 		next(error);
 	}
 });
-router.delete('/:comment_id', async (req, res,next) => {
+router.delete('/:comment_id', authenticationMiddleware, async (req, res, next) => {
 	try {
 		const { user_id, product_id } = await Comment.findById(req.params.comment_id);
-		await Comment.findByIdAndRemove(req.params.comment_id);
-		await removeCommentToUser(req.params.comment_id, user_id);
-		await removeCommentToProduct(req.params.comment_id, product_id);
-		res.json({ status: 1 });
+		if (req.user._id == user_id) {
+			await Comment.findByIdAndRemove(req.params.comment_id);
+			await removeCommentToUser(req.params.comment_id, user_id);
+			await removeCommentToProduct(req.params.comment_id, product_id);
+			res.json({ status: 1 });
+		}
+		else{
+			throw error;
+		}
 	} catch (error) {
 		next(error);
 	}

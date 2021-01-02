@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-
+const jwt = require('jsonwebtoken');
 const UserSchema = new Schema({
 	name: {
 		type: String,
@@ -47,6 +47,15 @@ const UserSchema = new Schema({
 			ref: 'Comment',
 		},
 	],
+	isAdmin:{
+		type:Boolean,
+		default:false
+	}
 });
+UserSchema.methods.generateToken= async function(){
+	const loginUser = this;
+	const token = await jwt.sign({_id:loginUser._id,emailAdress:loginUser.emailAdress},'secretkey',{expiresIn:'2d'});
+	return token;
+}
 
 module.exports = mongoose.model('user', UserSchema);

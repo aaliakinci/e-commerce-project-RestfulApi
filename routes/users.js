@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const createError=require('http-errors');
+const createError = require('http-errors');
+
+
+
+
+//Middleware
+const authenticationMiddleware = require('../middleware/authenticationMiddleware');
+const adminAuthentication = require('../middleware/adminAuthenticationMiddleware');
 //password hash
 const bcrypt = require('bcryptjs');
 //mongoose
@@ -9,7 +16,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 
 //Get Users with Orders
-router.get('/', (req, res) => {
+router.get('/',[authenticationMiddleware,adminAuthentication], (req, res) => {
 	const promise = User.aggregate([
 		{
 			$lookup: {
@@ -35,7 +42,8 @@ router.get('/', (req, res) => {
 		});
 });
 //Get User Lookup Comments
-router.get('/:user_id/comments', (req, res) => {
+router.get('/:user_id/comments',authenticationMiddleware,
+(req, res) => {
 	const promise = User.aggregate([
 		{
 			$match: { _id: mongoose.Types.ObjectId(req.params.user_id) },
@@ -75,22 +83,36 @@ router.get('/:user_id/comments', (req, res) => {
 			res.json(err);
 		});
 });
+//update user by user_id 
+router.put('/update',authenticationMiddleware,async(req,res,next)=>{
+	try {
+	const user_id = (req.user._id);
+	console.log(user_id)
+	const updatedUser = await User.findByIdAndUpdate(user_id,req.body,{new:true});
+	res.json({updatedUser})
+	} catch (error) {
+		next(error);
+	}
+});
+//user modify to admin
+router.put('/update/admin',[authenticationMiddleware,adminAuthentication],async(req,res,next)=>{
+	try {
+	const user_id = req.body._id;
+	const updatedUser = await User.findByIdAndUpdate(user_id,{isAdmin:true},{new:true});
+	res.json({updatedUser})
+	} catch (error) {
+		next(error);
+	}
+});
 
 //Login
 router.post('/login', async (req, res, next) => {
- 
 	try {
 		const { emailAdress, password } = req.body;
-	 
-		const user = await User.findOne({ emailAdress });
-		if (!user) {
-		 throw createError(400,"Girilen email/şifre hatalı");
-		}
-		const checkPassword = bcrypt.compare(password, user.password);
-		if (!checkPassword) {
-		  throw createError(400,"Girilen email/şifre hatalı");
-		}
-		res.json(user);
+		const user = await loginUser(emailAdress, password);
+		const token = await user.generateToken();
+
+		res.json({user,token});
 	} catch (error) {
 		next(error);
 	}
@@ -118,6 +140,17 @@ router.post('/register', (req, res) => {
 	});
 });
 
-//Login
-router.post('/login', (req, res) => {});
+//Function Area
+async function loginUser(emailAdress, password) {
+	const user = await User.findOne({ emailAdress });
+	if (!user) {
+		throw createError(400, 'Girilen email/şifre hatalı');
+	}
+	const checkPassword = bcrypt.compare(password, user.password);
+	if (!checkPassword) {
+		throw createError(400, 'Girilen email/şifre hatalı');
+	}
+	return user;
+}
+
 module.exports = router;

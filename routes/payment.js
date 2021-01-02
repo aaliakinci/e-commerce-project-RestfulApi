@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
 
+//Middleware
+const authenticationMiddleware = require('../middleware/authenticationMiddleware');
+const adminAuthentication = require('../middleware/adminAuthenticationMiddleware');
+
 //Models
 const Payment = require('../Models/Payment');
 //Get All Payment
-router.get('/', (req, res,next) => {
+router.get('/',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const promise = Payment.find({});
 	promise
 		.then((data) => {
@@ -28,7 +32,7 @@ router.post('/create', (req, res,next) => {
 });
 
 //Get payment by payment_id
-router.get('/:payment_id', (req, res,next) => {
+router.get('/:payment_id',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const promise = Payment.findById(req.params.payment_id);
 	promise
 		.then((data) => {

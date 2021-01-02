@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+
+
+//Middleware
+const authenticationMiddleware = require('../middleware/authenticationMiddleware');
+const adminAuthentication = require('../middleware/adminAuthenticationMiddleware');
+
 //Models
 const Product = require('../Models/Product');
 const Category = require('../Models/Category');
@@ -34,7 +40,7 @@ router.get('/', (req, res,next) => {
 });
 
 //Create new Product
-router.post('/create', (req, res,next) => {
+router.post('/create',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const product = new Product(req.body);
 	const promise = product.save();
 
@@ -96,7 +102,7 @@ router.get('/:product_id', (req, res,next) => {
 });
 
 //Update Product By Id
-router.put('/:product_id', (req, res,next) => {
+router.put('/:product_id',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const promise = Product.findByIdAndUpdate(req.params.product_id, req.body, { new: true });
 	promise
 		.then((data) => {
@@ -108,7 +114,7 @@ router.put('/:product_id', (req, res,next) => {
 });
 
 //Remove Product By Id
-router.delete('/:product_id', async (req, res,next) => {
+router.delete('/:product_id',[authenticationMiddleware,adminAuthentication], async (req, res,next) => {
 	try {
 		let comment_id_arr = [];
 		await deleteProductFromCategory(req.params.product_id);

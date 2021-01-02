@@ -7,6 +7,9 @@ const Category = require('../Models/Category');
 const Product = require('../Models/Product');
 const Comment = require('../Models/Comment');
 
+//Middleware
+const authenticationMiddleware = require('../middleware/authenticationMiddleware');
+const adminAuthentication = require('../middleware/adminAuthenticationMiddleware');
 
 //Get All Category
 router.get('/', (req, res,next) => {
@@ -47,7 +50,7 @@ router.get('/withProducts', (req, res,next) => {
 });
 
 //Create New Categories
-router.post('/create', (req, res,next) => {
+router.post('/create',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const category = new Category(req.body);
 	const promise = category.save();
 	promise
@@ -72,7 +75,7 @@ router.get('/:category_id', (req, res,next) => {
 });
 
 //Update Category by ID
-router.put('/:category_id', (req, res,next) => {
+router.put('/:category_id',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const promise = Category.findByIdAndUpdate(req.params.category_id, req.body, { new: true });
 	promise
 		.then((data) => {
@@ -83,7 +86,7 @@ router.put('/:category_id', (req, res,next) => {
 		});
 });
 //Delete Category by Id
-router.delete('/:category_id', async (req, res,next) => {
+router.delete('/:category_id',[authenticationMiddleware,adminAuthentication], async (req, res,next) => {
 	try {
 		const { products } = await Category.findById(req.params.category_id);
 		for (let i in products) {

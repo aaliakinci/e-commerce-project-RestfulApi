@@ -3,13 +3,17 @@ const { NotExtended } = require('http-errors');
 const mongoose = require('mongoose');
 const router = express.Router();
 
+//Middleware
+const authenticationMiddleware = require('../middleware/authenticationMiddleware');
+const adminAuthentication = require('../middleware/adminAuthenticationMiddleware');
+
 //Models
 const Order = require('../Models/Order');
 const OrderDetail = require('../Models/OrderDetail');
 const User = mongoose.model('user');
 const Product = require('../Models/Product');
 //Get All Order
-router.get('/', (req, res,next) => {
+router.get('/',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const promise = Order.find({});
 	promise
 		.then((data) => {
@@ -31,7 +35,7 @@ router.get('/:user_id', (req, res,next) => {
 		});
 });
 //Get Order by order_id
-router.get('/:order_id', (req, res,next) => {
+router.get('/:order_id',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const promise = Order.findById(req.params.order_id);
 	promise
 		.then((data) => {
@@ -42,7 +46,7 @@ router.get('/:order_id', (req, res,next) => {
 		});
 });
 //Update Order by order_id
-router.put('/:order_id', async (req, res,next) => {
+router.put('/:order_id',[authenticationMiddleware,adminAuthentication], async (req, res,next) => {
 	try {
 		const { canselOrder } = req.body;
 	if (canselOrder == 'true') {
