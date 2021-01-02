@@ -1,4 +1,5 @@
 const express = require('express');
+const { NotExtended } = require('http-errors');
 const mongoose = require('mongoose');
 const router = express.Router();
 
@@ -8,40 +9,40 @@ const OrderDetail = require('../Models/OrderDetail');
 const User = mongoose.model('user');
 const Product = require('../Models/Product');
 //Get All Order
-router.get('/', (req, res) => {
+router.get('/', (req, res,next) => {
 	const promise = Order.find({});
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Get order by user_id
-router.get('/:user_id', (req, res) => {
+router.get('/:user_id', (req, res,next) => {
 	const promise = Order.findById({ user_id: req.params.user_id });
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Get Order by order_id
-router.get('/:order_id', (req, res) => {
+router.get('/:order_id', (req, res,next) => {
 	const promise = Order.findById(req.params.order_id);
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Update Order by order_id
-router.put('/:order_id', async (req, res) => {
+router.put('/:order_id', async (req, res,next) => {
 	try {
 		const { canselOrder } = req.body;
 	if (canselOrder == 'true') {
@@ -52,11 +53,11 @@ router.put('/:order_id', async (req, res) => {
 		res.json(order);
 	}
 	} catch (error) {
-		res.json(error);
+		next(error);
 	}
 });
 //Create order with order detail and if has user push user
-router.post('/create', async (req, res) => {
+router.post('/create', async (req, res,next) => {
 	try {
 		const { user_id, quantityProduct, products, totalPrice } = req.body;
 		const {
@@ -88,7 +89,7 @@ router.post('/create', async (req, res) => {
 		productUpdateunitStock(_id.toString(), true);
 		res.json(order);
 	} catch (error) {
-		throw error;
+		next(error);
 	}
 });
 

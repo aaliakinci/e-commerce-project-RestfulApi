@@ -9,19 +9,19 @@ const Comment = require('../Models/Comment');
 
 
 //Get All Category
-router.get('/', (req, res) => {
+router.get('/', (req, res,next) => {
 	const promise = Category.find({});
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 //Get All Categories with products
-router.get('/withProducts', (req, res) => {
+router.get('/withProducts', (req, res,next) => {
 	const promise = Category.aggregate([
 		{
 			$lookup: {
@@ -42,12 +42,12 @@ router.get('/withProducts', (req, res) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 //Create New Categories
-router.post('/create', (req, res) => {
+router.post('/create', (req, res,next) => {
 	const category = new Category(req.body);
 	const promise = category.save();
 	promise
@@ -55,35 +55,35 @@ router.post('/create', (req, res) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 //Get category by Id
-router.get('/:category_id', (req, res) => {
+router.get('/:category_id', (req, res,next) => {
 	const promise = Category.findById(req.params.category_id);
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 //Update Category by ID
-router.put('/:category_id', (req, res) => {
+router.put('/:category_id', (req, res,next) => {
 	const promise = Category.findByIdAndUpdate(req.params.category_id, req.body, { new: true });
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Delete Category by Id
-router.delete('/:category_id', async (req, res) => {
+router.delete('/:category_id', async (req, res,next) => {
 	try {
 		const { products } = await Category.findById(req.params.category_id);
 		for (let i in products) {
@@ -92,7 +92,7 @@ router.delete('/:category_id', async (req, res) => {
 		await Category.findByIdAndRemove(req.params.category_id);
 		res.json({ status: 1 });
 	} catch (error) {
-		res.json(error);
+		next(error);
 	}
 });
 
@@ -105,7 +105,7 @@ async function deleteProducts(product_id) {
 		}
 		await Product.findByIdAndRemove(product_id);
 	} catch (error) {
-		console.log(error);
+		throw error;
 	}
 }
 async function deleteProductFromComments(product_id) {
@@ -120,7 +120,7 @@ async function deleteProductFromComments(product_id) {
 					data.save();
 				})
 				.catch((err) => {
-					console.log(err);
+					throw err;
 				});
 		}
 	}
@@ -137,7 +137,7 @@ async function deleteProductCommentsFromUser(comment_id) {
 				data.save();
 			})
 			.catch((err) => {
-				console.log(err);
+				throw err;
 			});
 	}
 }

@@ -5,12 +5,12 @@ const router = express.Router();
 const OrderDetail = require('../Models/OrderDetail');
 
 //Get orderDetail by orderDetail_id
-router.get('/:orderDetail_id',(req,res)=>{
+router.get('/:orderDetail_id',(req,res,next)=>{
 	const promise =OrderDetail.findById(req.params.orderDetail_id);
 	promise.then((data)=>{
 		res.json(data);
 	}).catch((err)=>{
-		res.json(err);
+		next(err);
 	});
 });
 

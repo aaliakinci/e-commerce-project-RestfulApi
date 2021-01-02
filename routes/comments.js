@@ -6,40 +6,40 @@ const Comment = require('../Models/Comment');
 const User = mongoose.model('user');
 const Product = require('../Models/Product');
 
-router.get('/', (req, res) => {
+router.get('/', (req, res,next) => {
 	const promise = Comment.find({});
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Get Comment by User_id
-router.get('/:user_id', (req, res) => {
+router.get('/:user_id', (req, res,next) => {
 	const promise = Comment.find({ user_id: req.params.user_id });
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Get Comment by Product_id
-router.get('/:product_id', (req, res) => {
+router.get('/:product_id', (req, res,next) => {
 	const promise = Comment.find({ product_id: req.params.product_id });
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Create Comment and push Product and User Comments
-router.post('/create', async (req, res) => {
+router.post('/create', async (req, res,next) => {
 	try {
 		const { user_id, product_id, title, body } = req.body;
 		const comment = new Comment({ user_id, product_id, title, body });
@@ -48,10 +48,10 @@ router.post('/create', async (req, res) => {
 		addCommentToProduct(_id.toString(), product_id);
 		res.json({ status: 1 });
 	} catch (error) {
-		res.json(error);
+		next(error);
 	}
 });
-router.delete('/:comment_id', async (req, res) => {
+router.delete('/:comment_id', async (req, res,next) => {
 	try {
 		const { user_id, product_id } = await Comment.findById(req.params.comment_id);
 		await Comment.findByIdAndRemove(req.params.comment_id);
@@ -59,7 +59,7 @@ router.delete('/:comment_id', async (req, res) => {
 		await removeCommentToProduct(req.params.comment_id, product_id);
 		res.json({ status: 1 });
 	} catch (error) {
-		res.json(error);
+		next(error);
 	}
 });
 
