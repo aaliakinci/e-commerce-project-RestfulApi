@@ -13,6 +13,7 @@ const paymentRouter = require('./routes/payment');
 const orderRouter = require('./routes/order');
 const orderDetailRouter= require('./routes/orderDetail');
 const commentRouter= require('./routes/comments');
+const errorMiddleware=require('./middleware/errorCatchMiddleware')
 const app = express();
 
 //db connection
@@ -50,7 +51,7 @@ app.use('/orders',orderRouter);
 app.use('/orderDetail', orderDetailRouter);
 app.use('/payments', paymentRouter);
 app.use('/comments', commentRouter);
-
+app.use(errorMiddleware);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

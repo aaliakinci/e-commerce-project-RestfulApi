@@ -7,7 +7,7 @@ const Category = require('../Models/Category');
 const Comment = require('../Models/Comment');
 const User = mongoose.model('user');
 //Get All Products
-router.get('/', (req, res) => {
+router.get('/', (req, res,next) => {
 	const promise = Product.aggregate([
 		{
 			$lookup: {
@@ -29,12 +29,12 @@ router.get('/', (req, res) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 //Create new Product
-router.post('/create', (req, res) => {
+router.post('/create', (req, res,next) => {
 	const product = new Product(req.body);
 	const promise = product.save();
 
@@ -45,70 +45,70 @@ router.post('/create', (req, res) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Get Last Uploaded Product
-router.get('/lastProducts', (req, res) => {
+router.get('/lastProducts', (req, res,next) => {
 	const promise = Product.find({}).sort({ createAt: -1 });
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 //Get Product Sort purchaseQuantity
-router.get('/purchaseQuantity', (req, res) => {
+router.get('/purchaseQuantity', (req, res,next) => {
 	const promise = Product.find({}).sort({ purchaseQuantity: -1 });
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 // Get Product By CategoryId
-router.get('/:category_id', (req, res) => {
+router.get('/:category_id', (req, res,next) => {
 	const promise = Product.find({ category_id: req.params.category_id });
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 //Get Product By Id
-router.get('/:product_id', (req, res) => {
+router.get('/:product_id', (req, res,next) => {
 	const promise = Product.findById(req.params.product_id);
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 //Update Product By Id
-router.put('/:product_id', (req, res) => {
+router.put('/:product_id', (req, res,next) => {
 	const promise = Product.findByIdAndUpdate(req.params.product_id, req.body, { new: true });
 	promise
 		.then((data) => {
 			res.json(data);
 		})
 		.catch((err) => {
-			res.json(err);
+			next(err);
 		});
 });
 
 //Remove Product By Id
-router.delete('/:product_id', async (req, res) => {
+router.delete('/:product_id', async (req, res,next) => {
 	try {
 		let comment_id_arr = [];
 		await deleteProductFromCategory(req.params.product_id);
@@ -120,7 +120,7 @@ router.delete('/:product_id', async (req, res) => {
 		await Product.findByIdAndRemove(req.params.product_id);
 		res.json({ status: 1 });
 	} catch (error) {
-		console.log(error);
+		next(error);
 	}
 });
 
@@ -144,7 +144,7 @@ async function deleteProductFromComments(product_id) {
 					data.save();
 				})
 				.catch((err) => {
-					console.log(err);
+					throw err;
 				});
 		}
 	}
@@ -161,7 +161,7 @@ async function deleteProductCommentsFromUser(comment_id) {
 				data.save();
 			})
 			.catch((err) => {
-				console.log(err);
+				throw err;
 			});
 	}
 }
