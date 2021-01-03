@@ -18,6 +18,7 @@ const mongoose = require('mongoose');
 //Models
 const User = require('../models/User');
 
+
 //Get Users with Orders
 router.get('/',[authenticationMiddleware,adminAuthentication], (req, res) => {
 	const promise = User.aggregate([

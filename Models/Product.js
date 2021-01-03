@@ -32,6 +32,9 @@ const ProductSchema = new Schema({
 			type:mongoose.Types.ObjectId,
 			ref:'Comment'
 		}
-	]
+	],
+	productImage:{
+		type:String,
+	}
 });
 module.exports = mongoose.model('product', ProductSchema);
