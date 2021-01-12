@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const createError = require('http-errors');
-const nodemailer = require('nodemailer')
-const jwt = require('jsonwebtoken')
-
+const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
+const cookie = require('cookie');
 
 //Middleware
 const authenticationMiddleware = require('../middleware/authenticationMiddleware');
@@ -17,10 +17,10 @@ const mongoose = require('mongoose');
 
 //Models
 const User = require('../models/User');
-
+const cookieParser = require('cookie-parser');
 
 //Get Users with Orders
-router.get('/',[authenticationMiddleware,adminAuthentication], (req, res) => {
+router.get('/', [authenticationMiddleware, adminAuthentication], (req, res) => {
 	const promise = User.aggregate([
 		{
 			$lookup: {
@@ -46,8 +46,7 @@ router.get('/',[authenticationMiddleware,adminAuthentication], (req, res) => {
 		});
 });
 //Get User Lookup Comments
-router.get('/:user_id/comments',authenticationMiddleware,
-(req, res) => {
+router.get('/:user_id/comments', authenticationMiddleware, (req, res) => {
 	const promise = User.aggregate([
 		{
 			$match: { _id: mongoose.Types.ObjectId(req.params.user_id) },
@@ -87,23 +86,32 @@ router.get('/:user_id/comments',authenticationMiddleware,
 			res.json(err);
 		});
 });
-//update user by user_id 
-router.put('/update',authenticationMiddleware,async(req,res,next)=>{
+//Get User By ID
+router.get('/:user_id', authenticationMiddleware, async(req, res, next)=> {
 	try {
-	const user_id = (req.user._id);
-	console.log(user_id)
-	const updatedUser = await User.findByIdAndUpdate(user_id,req.body,{new:true});
-	res.json({updatedUser})
+ 		const user = await User.findById(req.params.user_id);
+		res.json(user)
+	} catch (error) {
+		next(error);
+	}
+});
+//update user by user_id
+router.put('/update', authenticationMiddleware, async (req, res, next) => {
+	try {
+		const user_id = req.user._id;
+		console.log(user_id);
+		const updatedUser = await User.findByIdAndUpdate(user_id, req.body, { new: true });
+		res.json({ updatedUser });
 	} catch (error) {
 		next(error);
 	}
 });
 //user modify to admin
-router.put('/update/admin',[authenticationMiddleware],async(req,res,next)=>{
+router.put('/update/admin', [authenticationMiddleware], async (req, res, next) => {
 	try {
-	const user_id = req.body._id;
-	const updatedUser = await User.findByIdAndUpdate(user_id,{isAdmin:true},{new:true});
-	res.json({updatedUser})
+		const user_id = req.body._id;
+		const updatedUser = await User.findByIdAndUpdate(user_id, { isAdmin: true }, { new: true });
+		res.json({ updatedUser });
 	} catch (error) {
 		next(error);
 	}
@@ -115,8 +123,7 @@ router.post('/login', async (req, res, next) => {
 		const { emailAdress, password } = req.body;
 		const user = await loginUser(emailAdress, password);
 		const token = await user.generateToken();
-
-		res.json({user,token});
+		res.json({ user, token });
 	} catch (error) {
 		next(error);
 	}
@@ -126,66 +133,67 @@ router.post('/login', async (req, res, next) => {
 router.post('/register', async (req, res) => {
 	try {
 		const { name, surname, phoneNumber, emailAdress, password } = req.body;
-	bcrypt.hash(password, 10, async (err, hash) => {
-		const user = new User({
-			name,
-			surname,
-			phoneNumber,
-			emailAdress,
-			password: hash,
+		bcrypt.hash(password, 10, async (err, hash) => {
+			const user = new User({
+				name,
+				surname,
+				phoneNumber,
+				emailAdress,
+				password: hash,
+			});
+			const userRegistered = await user.save();
+
+			const jwtInfo = {
+				_id: userRegistered._id,
+				emailAdress: userRegistered.emailAdress,
+			};
+
+			const jwtToken = jwt.sign(jwtInfo, process.env.CONFIRM_MAIL_JWT_SECRET_KEY);
+
+			const transporter = nodemailer.createTransport({
+				service: 'gmail',
+				auth: {
+					user: process.env.GMAIL_USER,
+					pass: process.env.GMAIL_PASSWORD,
+				},
+			});
+			const url = process.env.POST_URL + 'users/verify?id=' + jwtToken;
+			await transporter.sendMail({
+				from: 'E-commerce-Project',
+				to: userRegistered.emailAdress,
+				subject: 'Emaili Onaylama Kodu',
+				text:
+					'Hoşgeldiniz ileride aksaklıklar yaşamamak için lütfen email adresinizi onaylayınız.Onaylamak için linke tıklayınız link :' +
+					url,
+			});
+			res.json(userRegistered);
 		});
-		const userRegistered = await user.save();
-
-		const jwtInfo = {
-			_id:userRegistered._id,
-			emailAdress:userRegistered.emailAdress
-		};
-
-		const jwtToken = jwt.sign(jwtInfo,process.env.CONFIRM_MAIL_JWT_SECRET_KEY);
-
-		const transporter = nodemailer.createTransport({
-			service:'gmail',
-			auth:{
-				user:process.env.GMAIL_USER,
-				pass:process.env.GMAIL_PASSWORD
-			}
-		});
-		const url = process.env.POST_URL+'users/verify?id='+jwtToken;
-		await transporter.sendMail({
-			from:'E-commerce-Project',
-			to:userRegistered.emailAdress,
-			subject:"Emaili Onaylama Kodu",
-			text:"Hoşgeldiniz ileride aksaklıklar yaşamamak için lütfen email adresinizi onaylayınız.Onaylamak için linke tıklayınız link :"+url
-
-		})
-		res.json(userRegistered)
-	});
-	} catch (error) {
-		
-	}
+	} catch (error) {}
 });
 
 //verify
-router.put('/verify',async(req,res,next)=>{
+router.put('/verify', async (req, res, next) => {
 	try {
 		const token = req.query.id;
-	if(token)
-	{
-		jwt.verify(token,process.env.CONFIRM_MAIL_JWT_SECRET_KEY,async (e,decoded)=>{
-			if(e){
-				throw e;
-			}
-			else{
-				const verifyUser_id = decoded._id;
-				const updatedUser = await User.findByIdAndUpdate(verifyUser_id,{isEmailVerify:true},{new:true});
-				res.json(updatedUser);
-			}
-		});
-	}
+		if (token) {
+			jwt.verify(token, process.env.CONFIRM_MAIL_JWT_SECRET_KEY, async (e, decoded) => {
+				if (e) {
+					throw e;
+				} else {
+					const verifyUser_id = decoded._id;
+					const updatedUser = await User.findByIdAndUpdate(
+						verifyUser_id,
+						{ isEmailVerify: true },
+						{ new: true },
+					);
+					res.json(updatedUser);
+				}
+			});
+		}
 	} catch (error) {
 		next(error);
 	}
-})
+});
 
 //Function Area
 async function loginUser(emailAdress, password) {

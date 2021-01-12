@@ -61,6 +61,7 @@ const UserSchema = new Schema({
 UserSchema.methods.generateToken= async function(){
 	const loginUser = this;
 	const token = await jwt.sign({_id:loginUser._id,emailAdress:loginUser.emailAdress,isEmailVerify:loginUser.isEmailVerify},process.env.JWT_SECRET_KEY,{expiresIn:'2d'});
+  
 	return token;
 }
 

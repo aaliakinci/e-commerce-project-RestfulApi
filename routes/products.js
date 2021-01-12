@@ -1,34 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-
-const multer = require('multer');
-const stor = multer.diskStorage({
-	destination:function(req,file,cb){
-		cb(null,'./public/uploads/');
-	},
-	filename:function(req,file,cb){
-		cb(null,new Date().toISOString().replace(/:/g, '-')+file.originalname)
-	}
-})
-const fileFilter = (req,file,cb)=>{
-	if(file.mimetype==='image/jpeg' || file.mimetype==='image/png')
-	{
-		cb(null,true);
-	}
-	else{
-		cb(null,false);
-	}
-	
-	
-}
-const upload = multer({
-	storage:stor,
-	limits:{
-		fileSize:1024*1024*5
-	},
-	fileFilter:fileFilter
-});
+const upload = require('../middleware/imageUpload');
+require('dotenv').config()
 
 //Middleware
 const authenticationMiddleware = require('../middleware/authenticationMiddleware');
@@ -40,7 +14,8 @@ const Category = require('../Models/Category');
 const Comment = require('../Models/Comment');
 const User = mongoose.model('user');
 //Get All Products
-router.get('/', (req, res,next) => {
+router.get('/', (req, res, next) => {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
 	const promise = Product.aggregate([
 		{
 			$lookup: {
@@ -67,28 +42,34 @@ router.get('/', (req, res,next) => {
 });
 
 //Create new Product
-router.post('/create',[authenticationMiddleware,adminAuthentication],upload.single('productImage'),(req, res,next) => {
-	const product = new Product({
-		productName:req.body.productName,
-		unitStock:req.body.unitStock,
-		unitPrice:req.body.unitPrice,
-		category_id:req.body.category_id,
-		productImage:req.file.path
-	});
-	const promise = product.save();
-
-	promise
-		.then((data) => {
-			const category_id = req.body.category_id;
-			addProductThereCategory(category_id, data);
-			res.json(data);
-		})
-		.catch((err) => {
-			next(err);
+router.post(
+	'/create',
+	[authenticationMiddleware, adminAuthentication],
+	upload.single('productImage'),
+	(req, res, next) => {
+		const product = new Product({
+			productName: req.body.productName,
+			unitStock: req.body.unitStock,
+			unitPrice: req.body.unitPrice,
+			category_id: req.body.category_id,
+			productImage: process.env.POST_URL+req.file.path,
 		});
-});
+		const promise = product.save();
+
+		promise
+			.then((data) => {
+				const category_id = req.body.category_id;
+				addProductThereCategory(category_id, data);
+				res.json(data);
+			})
+			.catch((err) => {
+				next(err);
+			});
+	},
+);
 //Get Last Uploaded Product
-router.get('/lastProducts', (req, res,next) => {
+router.get('/lastProducts', (req, res, next) => {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
 	const promise = Product.find({}).sort({ createAt: -1 });
 	promise
 		.then((data) => {
@@ -98,8 +79,33 @@ router.get('/lastProducts', (req, res,next) => {
 			next(err);
 		});
 });
+//Get Product Sort lowerPrice
+router.get('/lowerPrice', (req, res, next) => {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
+	const promise = Product.find({}).sort({ unitPrice: 1 });
+	promise
+		.then((data) => {
+			res.json(data);
+		})
+		.catch((err) => {
+			next(err);
+		});
+});
+//Get Product Sort higherPrice
+router.get('/higherPrice', (req, res, next) => {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
+	const promise = Product.find({}).sort({ unitPrice: -1 });
+	promise
+		.then((data) => {
+			res.json(data);
+		})
+		.catch((err) => {
+			next(err);
+		});
+});
 //Get Product Sort purchaseQuantity
-router.get('/purchaseQuantity', (req, res,next) => {
+router.get('/purchaseQuantity', (req, res, next) => {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
 	const promise = Product.find({}).sort({ purchaseQuantity: -1 });
 	promise
 		.then((data) => {
@@ -109,9 +115,24 @@ router.get('/purchaseQuantity', (req, res,next) => {
 			next(err);
 		});
 });
-
+//Get Products Between UnitPrices
+router.post('/between/:lowerPrice/:higherPrice', (req, res, next) => {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
+	const { lowerPrice, higherPrice } = req.params;
+		const promise = Product.find({
+			unitPrice: { $gte: lowerPrice, $lte: higherPrice },
+		});
+		promise
+			.then((data) => {
+				res.json(data);
+			})
+			.catch((err) => {
+				res.json(err);
+			});
+});
 // Get Product By CategoryId
-router.get('/:category_id', (req, res,next) => {
+router.get('/:category_id', (req, res, next) => {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
 	const promise = Product.find({ category_id: req.params.category_id });
 	promise
 		.then((data) => {
@@ -123,7 +144,7 @@ router.get('/:category_id', (req, res,next) => {
 });
 
 //Get Product By Id
-router.get('/:product_id', (req, res,next) => {
+router.get('/:product_id', (req, res, next) => {
 	const promise = Product.findById(req.params.product_id);
 	promise
 		.then((data) => {
@@ -135,7 +156,7 @@ router.get('/:product_id', (req, res,next) => {
 });
 
 //Update Product By Id
-router.put('/:product_id',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
+router.put('/:product_id', [authenticationMiddleware, adminAuthentication], (req, res, next) => {
 	const promise = Product.findByIdAndUpdate(req.params.product_id, req.body, { new: true });
 	promise
 		.then((data) => {
@@ -147,21 +168,25 @@ router.put('/:product_id',[authenticationMiddleware,adminAuthentication], (req, 
 });
 
 //Remove Product By Id
-router.delete('/:product_id',[authenticationMiddleware,adminAuthentication], async (req, res,next) => {
-	try {
-		let comment_id_arr = [];
-		await deleteProductFromCategory(req.params.product_id);
-		comment_id_arr = await deleteProductFromComments(req.params.product_id);
+router.delete(
+	'/:product_id',
+	[authenticationMiddleware, adminAuthentication],
+	async (req, res, next) => {
+		try {
+			let comment_id_arr = [];
+			await deleteProductFromCategory(req.params.product_id);
+			comment_id_arr = await deleteProductFromComments(req.params.product_id);
 
-		for (let i in comment_id_arr) {
-			await deleteProductCommentsFromUser(comment_id_arr[i]);
+			for (let i in comment_id_arr) {
+				await deleteProductCommentsFromUser(comment_id_arr[i]);
+			}
+			await Product.findByIdAndRemove(req.params.product_id);
+			res.json({ status: 1 });
+		} catch (error) {
+			next(error);
 		}
-		await Product.findByIdAndRemove(req.params.product_id);
-		res.json({ status: 1 });
-	} catch (error) {
-		next(error);
-	}
-});
+	},
+);
 
 //Function Area
 

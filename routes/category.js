@@ -1,6 +1,10 @@
 const { json } = require('express');
 const express = require('express');
 const router = express.Router();
+require('dotenv').config()
+
+const upload = require('../middleware/imageUpload')
+
 
 //Models
 const Category = require('../Models/Category');
@@ -13,6 +17,7 @@ const adminAuthentication = require('../middleware/adminAuthenticationMiddleware
 
 //Get All Category
 router.get('/', (req, res,next) => {
+	res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
 	const promise = Category.find({});
 	promise
 		.then((data) => {
@@ -50,8 +55,13 @@ router.get('/withProducts', (req, res,next) => {
 });
 
 //Create New Categories
-router.post('/create',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
-	const category = new Category(req.body);
+router.post('/create',[authenticationMiddleware,adminAuthentication],upload.single('categoryImage') ,(req, res,next) => {
+	const category = new Category({
+		categoryName :req.body.categoryName,
+		description:req.body.description,
+		categoryImage:process.env.POST_URL+req.file.path
+	}
+	);
 	const promise = category.save();
 	promise
 		.then((data) => {

@@ -12,6 +12,7 @@ const Order = require('../Models/Order');
 const OrderDetail = require('../Models/OrderDetail');
 const User = mongoose.model('user');
 const Product = require('../Models/Product');
+
 //Get All Order
 router.get('/',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const promise = Order.find({});
@@ -23,6 +24,7 @@ router.get('/',[authenticationMiddleware,adminAuthentication], (req, res,next) =
 			next(err);
 		});
 });
+
 //Get order by user_id
 router.get('/:user_id', (req, res,next) => {
 	const promise = Order.findById({ user_id: req.params.user_id });
@@ -34,6 +36,7 @@ router.get('/:user_id', (req, res,next) => {
 			next(err);
 		});
 });
+
 //Get Order by order_id
 router.get('/:order_id',[authenticationMiddleware,adminAuthentication], (req, res,next) => {
 	const promise = Order.findById(req.params.order_id);
@@ -45,6 +48,7 @@ router.get('/:order_id',[authenticationMiddleware,adminAuthentication], (req, re
 			next(err);
 		});
 });
+
 //Update Order by order_id
 router.put('/:order_id',[authenticationMiddleware,adminAuthentication], async (req, res,next) => {
 	try {
@@ -60,6 +64,7 @@ router.put('/:order_id',[authenticationMiddleware,adminAuthentication], async (r
 		next(error);
 	}
 });
+
 //Create order with order detail and if has user push user
 router.post('/create', async (req, res,next) => {
 	try {

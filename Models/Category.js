@@ -14,7 +14,8 @@ const CategorySchema = new Schema({
 			type: mongoose.Types.ObjectId,
 			ref:'Product'
 		}
-	]
+	],
+	categoryImage:String
 });
 
 module.exports = mongoose.model('category', CategorySchema);
